@@ -51,7 +51,7 @@
             [else (appC (parse (first l)) (parse (second l)))]
             )]
          [else (appC (parse (first l)) (parse (second l)))]
-       ))]
+         ))]
     ))
 
 
@@ -79,7 +79,93 @@
 ; of some form using the 'error' construct in plai-typed.
 
 (define (tc-env (env : TyEnv) (e : Expr)) : Type
-  (error 'tc-env "Not implemented"))
+  (type-case Expr e
+    ; TODO: implement numC case - numbers should have type numT
+    [numC (n) (numT)]
+
+    ; TODO: implement voidC case - void literal should have type voidT
+    [voidC () (voidT)]
+
+    ; TODO: implement boolC case - booleans should have type boolT
+    [boolC (b) (boolT)]
+
+    ; TODO: implement pairC case - type both sides and return appropriate pairT
+    [pairC (e1 e2) (error 'tc-env "TODO: pairC")]
+
+    ; TODO: implement fstC case - ensure argument has pairT and return first component type
+    [fstC (e1) (error 'tc-env "TODO: fstC")]
+
+    ; TODO: implement sndC case - ensure argument has pairT and return second component type
+    [sndC (e1) (error 'tc-env "TODO: sndC")]
+
+    ; TODO: implement plusC case - both arguments must be numT, result numT
+    ;    [plusC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
+    ;                       (numT)
+    ;                       (error 'tc "+ not numbers"))]
+
+    [plusC (e1 e2)
+           (let ([t1 (tc-env env e1)] [t2 (tc-env env e2)])
+             (if (and (numT? t1) (numT? t2))
+                 (numT)
+                 (error 'tc "plusC expected numbers")))]
+
+
+    ; TODO: implement timesC case - both arguments must be numT, result numT
+    [timesC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
+                        (numT)
+                        (error 'tc "timesC not numbers"))]
+
+    ; TODO: implement equal?C case - arguments must have same type, result boolT
+    [equal?C (e1 e2) (error 'tc-env "TODO: equal?C")]
+
+    ; TODO: implement letC case - infer type of e1, extend env with x, then type e2
+    [letC (x e1 e2) (let ([t1 (tc-env env e1)]) (tc-env (extend-env (bind x t1) env) e2))]
+
+    ; TODO: implement lambdaC case - extend env with x:argT, body type gives funT
+    [lambdaC (x argT e) (funT argT (tc-env (extend-env (bind x argT) env) e))]
+
+    ; TODO: implement appC case - function expression must have funT, argument type must match
+    [appC (e1 e2) (type-case Type (tc-env env e1)
+                    [funT (ty-arg ty-ret)
+                          (if (equal? (tc-env env e2) ty-arg)
+                              ty-ret
+                              (error 'tc "argument did not match input type"))]
+                    [else (error 'tc "application of a non-function")])]
+
+    ; TODO: implement idC case - look up variable in type environment
+    [idC (x) (lookup x env)]
+
+    ; TODO: implement ifC case - guard must be boolT, branches must have same type
+    [ifC (e0 e1 e2) (error 'tc-env "TODO: ifC")]
+
+    ; TODO: implement emptyC case - (emptyC t) has type (listT t)
+    [emptyC (t) (error 'tc-env "TODO: emptyC")]
+
+    ; TODO: implement consC case - element and list element type must agree
+    [consC (e1 e2) (error 'tc-env "TODO: consC")]
+
+    ; TODO: implement firstC case - argument must be listT t, result t
+    [firstC (e1) (error 'tc-env "TODO: firstC")]
+
+    ; TODO: implement restC case - argument must be listT t, result listT t
+    [restC (e1) (error 'tc-env "TODO: restC")]
+
+    ; TODO: implement is-empty?C case - argument must be listT t, result boolT
+    [is-empty?C (e1) (error 'tc-env "TODO: is-empty?C")]
+
+    ; TODO: implement recC case - follow lecture11 pattern with f and x bindings
+    [recC (f x argT retT e1) (error 'tc-env "TODO: recC")]
+
+    ; TODO: implement boxC case - result type is boxT of subexpression type
+    [boxC (e1) (error 'tc-env "TODO: boxC")]
+
+    ; TODO: implement unboxC case - argument must be boxT t, result t
+    [unboxC (e1) (error 'tc-env "TODO: unboxC")]
+
+    ; TODO: implement set-box!C case - box and value types must agree, result voidT
+    [set-box!C (e1 e2) (error 'tc-env "TODO: set-box!C")]
+    )
+  )
 
 (define (tc (e : Expr))
   (tc-env empty-env e))
