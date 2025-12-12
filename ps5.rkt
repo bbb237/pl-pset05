@@ -85,21 +85,27 @@
     [boolC (b) (boolT)]
     [pairC (e1 e2) (let ([t1 (tc-env env e1)]
                          [t2 (tc-env env e2)]) (pairT t1 t2))]
+    
     [fstC (e) (type-case Type (tc-env env e)
                 [pairT (t1 t2) t1]
                 [else (error 'tc "fstC expected pairT")])]
+    
     [sndC (e) (type-case Type (tc-env env e)
                 [pairT (t1 t2) t2]
                 [else (error 'tc "sndC expected pairT")])]
+    
     [plusC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
                        (numT)
                        (error 'tc "plusC not numbers"))]
+    
     [timesC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
                         (numT)
                         (error 'tc "timesC not numbers"))]
+    
     [equal?C (e1 e2) (if (equal? (tc-env env e1) (tc-env env e2))
                          (boolT)
                          (error 'tc "equal?C type mismatch"))]
+    
     [letC (x e1 e2) (let ([t1 (tc-env env e1)]) (tc-env (extend-env (bind x t1) env) e2))]
     [lambdaC (x argT e) (funT argT (tc-env (extend-env (bind x argT) env) e))]
     [appC (e1 e2) (type-case Type (tc-env env e1)
@@ -108,7 +114,9 @@
                               ty-ret
                               (error 'tc "argument did not match input type"))]
                     [else (error 'tc "application of a non-function")])]
+    
     [idC (x) (lookup x env)]
+    
     [ifC (e0 e1 e2) (if (equal? (tc-env env e0) (boolT))
                         (let ([t1 (tc-env env e1)]
                               [t2 (tc-env env e2)])
@@ -116,6 +124,7 @@
                               t1
                               (error 'tc "ifC branch type mismatch")))
                         (error 'tc "ifC gaurd type mismatch"))]
+    
     [emptyC (t) (listT t)]
     [consC (e1 e2) (type-case Type (tc-env env e2)
                      [listT (t)
@@ -123,25 +132,31 @@
                                 (listT t)
                                 (error 'tc "consC head/list mismatch"))]
                      [else (error 'tc "consC expected listT")])]
+    
     [firstC (e) (type-case Type (tc-env env e)
                   [listT (t) t]
                   [else (error 'tc "firstC expected listT")])]
+    
     [restC (e) (type-case Type (tc-env env e)
                  [listT (t) (listT t)]
                  [else (error 'tc "restC expected listT")])]
+    
     [is-empty?C (e) (type-case Type (tc-env env e)
                       [listT (t) (boolT)]
                       [else (error 'tc "is-empty?C expected listT")])]
+    
     [recC (f x argT retT e) (let* ([rec-env (extend-env (bind x argT)
                                                         (extend-env (bind f (funT argT retT)) env))]
                                    [fT (funT argT (tc-env rec-env e))])
                               (if (equal? (funT argT retT) fT)
                                   fT
                                   (error 'tc "recC type mismatch")))]
+    
     [boxC (e) (let ([t (tc-env env e)]) (boxT t))]
     [unboxC (e) (type-case Type (tc-env env e)
                   [boxT (t) t]
                   [else (error 'tc "unboxC expected boxT")])]
+    
     [set-box!C (e1 e2) (type-case Type (tc-env env e1)
                          [boxT (t)
                                (if (equal? t (tc-env env e2))
