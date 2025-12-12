@@ -179,13 +179,20 @@
                                   (error 'tc "recC type mismatch")))]
 
     ; TODO: implement boxC case - result type is boxT of subexpression type
-    [boxC (e) (error 'tc-env "TODO: boxC")]
+    [boxC (e) (let ([t (tc-env env e)]) (boxT t))]
 
     ; TODO: implement unboxC case - argument must be boxT t, result t
-    [unboxC (e) (error 'tc-env "TODO: unboxC")]
+    [unboxC (e) (type-case Type (tc-env env e)
+                  [boxT (t) t]
+                  [else (error 'tc "unboxC expected boxT")])]
 
     ; TODO: implement set-box!C case - box and value types must agree, result voidT
-    [set-box!C (e1 e2) (error 'tc-env "TODO: set-box!C")]
+    [set-box!C (e1 e2) (type-case Type (tc-env env e1)
+                         [boxT (t)
+                               (if (equal? t (tc-env env e2))
+                                   (voidT)
+                                   (error 'tc "set-box!C value type mismatch"))]
+                         [else (error 'tc "set-box!C expected boxT")])]
     )
   )
 
