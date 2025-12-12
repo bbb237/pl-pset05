@@ -90,25 +90,23 @@
     [boolC (b) (boolT)]
 
     ; TODO: implement pairC case - type both sides and return appropriate pairT
-    [pairC (e1 e2) (error 'tc-env "TODO: pairC")]
+    [pairC (e1 e2) (let ([t1 (tc-env env e1)]
+                         [t2 (tc-env env e2)]) (pairT t1 t2))]
 
     ; TODO: implement fstC case - ensure argument has pairT and return first component type
-    [fstC (e1) (error 'tc-env "TODO: fstC")]
+    [fstC (e) (type-case Type (tc-env env e)
+                [pairT (t1 t2) t1]
+                [else (error 'tc "fstC expected pairT")])]
 
     ; TODO: implement sndC case - ensure argument has pairT and return second component type
-    [sndC (e1) (error 'tc-env "TODO: sndC")]
+    [sndC (e) (type-case Type (tc-env env e)
+                [pairT (t1 t2) t2]
+                [else (error 'tc "sndC expected pairT")])]
 
     ; TODO: implement plusC case - both arguments must be numT, result numT
-    ;    [plusC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
-    ;                       (numT)
-    ;                       (error 'tc "+ not numbers"))]
-
-    [plusC (e1 e2)
-           (let ([t1 (tc-env env e1)] [t2 (tc-env env e2)])
-             (if (and (numT? t1) (numT? t2))
-                 (numT)
-                 (error 'tc "plusC expected numbers")))]
-
+    [plusC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
+                       (numT)
+                       (error 'tc "plusC not numbers"))]
 
     ; TODO: implement timesC case - both arguments must be numT, result numT
     [timesC (e1 e2) (if (and (equal? (tc-env env e1) (numT)) (equal? (tc-env env e2) (numT)))
@@ -116,7 +114,9 @@
                         (error 'tc "timesC not numbers"))]
 
     ; TODO: implement equal?C case - arguments must have same type, result boolT
-    [equal?C (e1 e2) (error 'tc-env "TODO: equal?C")]
+    [equal?C (e1 e2) (if (equal? (tc-env env e1) (tc-env env e2))
+                         (boolT)
+                         (error 'tc "equal?C type mismatch"))]
 
     ; TODO: implement letC case - infer type of e1, extend env with x, then type e2
     [letC (x e1 e2) (let ([t1 (tc-env env e1)]) (tc-env (extend-env (bind x t1) env) e2))]
@@ -136,31 +136,53 @@
     [idC (x) (lookup x env)]
 
     ; TODO: implement ifC case - guard must be boolT, branches must have same type
-    [ifC (e0 e1 e2) (error 'tc-env "TODO: ifC")]
+    [ifC (e0 e1 e2) (if (equal? (tc-env env e0) (boolT))
+                        (let ([t1 (tc-env env e1)]
+                              [t2 (tc-env env e2)])
+                          (if (equal? t1 t2)
+                              t1
+                              (error 'tc "ifC branch type mismatch")))
+                        (error 'tc "ifC gaurd type mismatch"))]
 
     ; TODO: implement emptyC case - (emptyC t) has type (listT t)
-    [emptyC (t) (error 'tc-env "TODO: emptyC")]
+    [emptyC (t) (listT t)]
 
     ; TODO: implement consC case - element and list element type must agree
-    [consC (e1 e2) (error 'tc-env "TODO: consC")]
+    [consC (e1 e2) (type-case Type (tc-env env e2)
+                     [listT (t)
+                            (if (equal? (tc-env env e1) t)
+                                (listT t)
+                                (error 'tc "consC head/list mismatch"))]
+                     [else (error 'tc "consC expected listT")])]
 
     ; TODO: implement firstC case - argument must be listT t, result t
-    [firstC (e1) (error 'tc-env "TODO: firstC")]
+    [firstC (e) (type-case Type (tc-env env e)
+                  [listT (t) t]
+                  [else (error 'tc "firstC expected listT")])]
 
     ; TODO: implement restC case - argument must be listT t, result listT t
-    [restC (e1) (error 'tc-env "TODO: restC")]
+    [restC (e) (type-case Type (tc-env env e)
+                 [listT (t) (listT t)]
+                 [else (error 'tc "restC expected listT")])]
 
     ; TODO: implement is-empty?C case - argument must be listT t, result boolT
-    [is-empty?C (e1) (error 'tc-env "TODO: is-empty?C")]
+    [is-empty?C (e) (type-case Type (tc-env env e)
+                      [listT (t) (boolT)]
+                      [else (error 'tc "is-empty?C expected listT")])]
 
     ; TODO: implement recC case - follow lecture11 pattern with f and x bindings
-    [recC (f x argT retT e1) (error 'tc-env "TODO: recC")]
+    [recC (f x argT retT e) (let* ([rec-env (extend-env (bind x argT)
+                                                        (extend-env (bind f (funT argT retT)) env))]
+                                   [fT (funT argT (tc-env rec-env e))])
+                              (if (equal? (funT argT retT) fT)
+                                  fT
+                                  (error 'tc "recC type mismatch")))]
 
     ; TODO: implement boxC case - result type is boxT of subexpression type
-    [boxC (e1) (error 'tc-env "TODO: boxC")]
+    [boxC (e) (error 'tc-env "TODO: boxC")]
 
     ; TODO: implement unboxC case - argument must be boxT t, result t
-    [unboxC (e1) (error 'tc-env "TODO: unboxC")]
+    [unboxC (e) (error 'tc-env "TODO: unboxC")]
 
     ; TODO: implement set-box!C case - box and value types must agree, result voidT
     [set-box!C (e1 e2) (error 'tc-env "TODO: set-box!C")]
